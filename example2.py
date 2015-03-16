@@ -40,7 +40,18 @@ def make_kv(k, v):
 import __main__
 for k,v in __main__.__dict__.items():
     make_kv(k, v)
-app.run(foreground=False)
+
+import subprocess
+import atexit
+def fusermount():
+    p = subprocess.Popen(['/bin/fusermount', '-u', app.get_mount_point()], close_fds=True, shell=False)
+    p.communicate()
+atexit.register(fusermount)
+
+import threading
+t = threading.Thread(target=app.run)
+t.daemon = True
+t.start()
 '''
 
     with open(filename, 'w') as f:

@@ -169,3 +169,6 @@ class IDAProc(object):
 
         ida_fs = IDAFS(self._root_fs)
         FUSE(ida_fs, self._mount_point, foreground=self._foreground)
+
+    def get_mount_point(self):
+        return self._mount_point
