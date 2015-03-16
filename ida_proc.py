@@ -5,7 +5,7 @@ import os
 import time
 from collections import namedtuple
 
-IDAEntry = namedtuple('IDAEntry', ['atime', 'ctime', 'mtime', 'func', 'entries'])
+IDAEntry = namedtuple('IDAEntry', ['atime', 'ctime', 'mtime', 'getter_func', 'setter_func', 'entries'])
 def is_dir(self):
     return self.entries is not None
 IDAEntry.is_dir = is_dir
@@ -33,12 +33,17 @@ class IDAFS(Operations):
             output['st_nlink'] = 2
             output['st_size'] = 4096
         else:
-            output['st_mode'] = S_IFREG | 0644
+            mod = 0000
+            if cur.getter_func is not None:
+                mod |= 0400
+            if cur.setter_func is not None:
+                mod |= 0200
+            output['st_mode'] = S_IFREG | 0044 | mod
             output['st_nlink'] = 1
-            output['st_size'] = len(str(cur.func()))
+            output['st_size'] = len(str(cur.getter_func()))
         return output
 
-    def read(self, path, size, offset, fh):
+    def _find(self, path):
         dirname = os.path.dirname(path)
         basename = os.path.basename(path)
 
@@ -58,9 +63,12 @@ class IDAFS(Operations):
             if cur.entries[basename].is_dir():
                 raise FuseOSError(EIO)
             else:
-                return str(cur.entries[basename].func())
+                return cur.entries[basename]
         except KeyError:
             raise FuseOSError(ENOENT)
+
+    def read(self, path, size, offset, fh):
+        return str(self._find(path).getter_func())
 
     def readdir(self, path, fh):
         cur = self._root_fs
@@ -80,8 +88,18 @@ class IDAFS(Operations):
         for d in dirs:
             yield d
 
+    def truncate(self, path, length, fh=None):
+        try:
+            self._find(path).setter_func(None)
+        except TypeError:
+            raise FuseOSError(EROFS)
+        return 0
+
     def write(self, path, data, offset, fh):
-        raise FuseOSError(EROFS)
+        try:
+            return len(str(self._find(path).setter_func(data)))
+        except TypeError:
+            raise FuseOSError(EROFS)
 
 class IDAProc(object):
     def __init__(self, *args, **kwargs):
@@ -89,9 +107,9 @@ class IDAProc(object):
         self._foreground = kwargs.pop('foreground', True)
 
         t = time.time()
-        self._root_fs = IDAEntry(atime=t, ctime=t, mtime=t, func=None, entries=dict())
+        self._root_fs = IDAEntry(atime=t, ctime=t, mtime=t, getter_func=None, setter_func=None, entries=dict())
 
-    def route(self, path):
+    def route(self, path, *args, **kwargs):
         dirname = os.path.dirname(path)
         basename = os.path.basename(path)
 
@@ -108,17 +126,32 @@ class IDAProc(object):
                     raise Exception('File already exists.')
             except KeyError:
                 t = time.time()
-                cur.entries[d] = IDAEntry(atime=t, ctime=t, mtime=t, func=None, entries=dict())
+                cur.entries[d] = IDAEntry(atime=t, ctime=t, mtime=t, getter_func=None, setter_func=None, entries=dict())
                 cur = cur.entries[d]
 
         if basename in cur.entries:
-            raise Exception('File already exists.')
+            # re-defined getter or setter
+            def _getter_wrap(getter_func):
+                cur.entries[basename] = cur.entries[basename]._replace(getter_func=getter_func)
+                return getter_func
+            def _setter_wrap(setter_func):
+                cur.entries[basename] = cur.entries[basename]._replace(setter_func=setter_func)
+                return setter_func
         else:
-            def _wrap(func):
+            def _getter_wrap(getter_func):
                 t = time.time()
-                cur.entries[basename] = IDAEntry(atime=t, ctime=t, mtime=t, func=func, entries=None)
-                return func
-            return _wrap
+                cur.entries[basename] = IDAEntry(atime=t, ctime=t, mtime=t, getter_func=getter_func, setter_func=None, entries=None)
+                return getter_func
+            def _setter_wrap(setter_func):
+                t = time.time()
+                cur.entries[basename] = IDAEntry(atime=t, ctime=t, mtime=t, getter_func=None, setter_func=setter_func, entries=None)
+                return setter_func
+
+        method = kwargs.pop('method', 'GET')
+        if method == 'GET':
+            return _getter_wrap
+        else:
+            return _setter_wrap
 
     def run(self, *args, **kwargs):
         mount_point = kwargs.pop('mount_point', None)
