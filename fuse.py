@@ -326,12 +326,20 @@ class FUSE(object):
                 op = partial(self._wrapper_, getattr(self, name))
                 setattr(fuse_ops, name, prototype(op))
         
-        #old_handler = signal(SIGINT, SIG_DFL)
+        #ValueError: signal only works in main thread
+        try:
+            old_handler = signal(SIGINT, SIG_DFL)
+        except ValueError:
+            pass
         
         err = _libfuse.fuse_main_real(len(args), argv, pointer(fuse_ops),
                                       sizeof(fuse_ops), None)
         
-        #signal(SIGINT, old_handler)
+        #ValueError: signal only works in main thread
+        try:
+            signal(SIGINT, old_handler)
+        except ValueError:
+            pass
         
         del self.operations     # Invoke the destructor
         if err:
