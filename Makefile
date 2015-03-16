@@ -7,3 +7,4 @@ pycode_instrumentation.so: pycode_instrumentation.c
 
 clean:
 	rm -f pycode_instrumentation.so
+	rm -f *.pyc
