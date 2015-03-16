@@ -155,11 +155,11 @@ class IDAProc(object):
 
     def run(self, *args, **kwargs):
         mount_point = kwargs.pop('mount_point', None)
-        if mount_point:
+        if mount_point is not None:
             self._mount_point = mount_point
 
         foreground = kwargs.pop('foreground', None)
-        if foreground:
+        if foreground is not None:
             self._foreground = foreground
 
         try:
