@@ -330,6 +330,7 @@ class FUSE(object):
         try:
             old_handler = signal(SIGINT, SIG_DFL)
         except ValueError:
+            old_handler = SIG_DFL
             pass
         
         err = _libfuse.fuse_main_real(len(args), argv, pointer(fuse_ops),
