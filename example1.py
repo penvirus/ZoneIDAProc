@@ -11,7 +11,7 @@ def register_for_data():
     # nonlocal in python 2.7
     # https://technotroph.wordpress.com/2012/10/01/python-closures-and-the-python-2-7-nonlocal-solution/
     data = dict()
-    data['data'] = 99999
+    data['data'] = 'default'
 
     @app.route('/test/data')
     def getter():
