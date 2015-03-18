@@ -1,3 +1,4 @@
+import time
 import threading
 import subprocess
 import atexit
@@ -9,8 +10,8 @@ data['data'] = 'default'
 
 def main():
     while True:
-        print "data['data'] = %s" % data['data']
-        sleep(3)
+        print "[%s]        data['data'] = %s" % (time.ctime(), data['data'])
+        sleep(1)
 
 def proc():
     app = IDAProc()
