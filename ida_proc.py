@@ -15,6 +15,7 @@ class IDAFS(Operations):
         self._root_fs = root_fs
 
     def getattr(self, path, fh=None):
+        path = os.path.normpath(path)
         cur = self._root_fs
         for d in path.split('/'):
             if not d:
@@ -44,6 +45,7 @@ class IDAFS(Operations):
         return output
 
     def _find(self, path):
+        path = os.path.normpath(path)
         dirname = os.path.dirname(path)
         basename = os.path.basename(path)
 
@@ -71,6 +73,7 @@ class IDAFS(Operations):
         return str(self._find(path).getter_func())
 
     def readdir(self, path, fh):
+        path = os.path.normpath(path)
         cur = self._root_fs
         for d in path.split('/'):
             if not d:
@@ -110,6 +113,7 @@ class IDAProc(object):
         self._root_fs = IDAEntry(atime=t, ctime=t, mtime=t, getter_func=None, setter_func=None, entries=dict())
 
     def route(self, path, *args, **kwargs):
+        path = os.path.normpath(path)
         dirname = os.path.dirname(path)
         basename = os.path.basename(path)
 
@@ -119,6 +123,8 @@ class IDAProc(object):
         cur = self._root_fs
 
         for d in dirname.split('/'):
+            if not d:
+                continue
             try:
                 if cur.entries[d].is_dir():
                     cur = cur.entries[d]
