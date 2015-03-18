@@ -30,7 +30,7 @@ class IDAFS(Operations):
         output['st_ctime'] = cur.ctime
         output['st_mtime'] = cur.mtime
         if cur.is_dir():
-            output['st_mode'] = S_IFDIR | 0555
+            output['st_mode'] = S_IFDIR | 0500
             output['st_nlink'] = 2
             output['st_size'] = 4096
         else:
