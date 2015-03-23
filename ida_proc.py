@@ -174,7 +174,7 @@ class IDAProc(object):
             pass
 
         ida_fs = IDAFS(self._root_fs)
-        FUSE(ida_fs, self._mount_point, foreground=self._foreground)
+        FUSE(ida_fs, self._mount_point, foreground=self._foreground, nothreads=True)
 
     def get_mount_point(self):
         return self._mount_point
