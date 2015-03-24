@@ -1,3 +1,5 @@
+#!/usr/bin/python
+
 import subprocess
 import sys
 import os
@@ -5,7 +7,7 @@ import os
 def instrument_code(pid, filename):
     """given a list"""
     cmd = list()
-    cmd.append('gdb')
+    cmd.append('./gdb')
     cmd.append('--nw')
     cmd.append('--nh')
     cmd.append('--nx')
