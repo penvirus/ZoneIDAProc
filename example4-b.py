@@ -14,7 +14,6 @@ def instrument_code(pid, filename):
     cmd.append('--batch')
     cmd.append('--pid')
     cmd.append('%s' % pid)
-    cmd.append('\'--eval-command=set scheduler-locking off\'')
     cmd.append('\'--eval-command=call dlopen("/tmp/pycode_instrumentation.so", 2)\'')
     cmd.append('\'--eval-command=call instrument_file("%s")\'' % filename)
     with open(os.devnull, 'w') as null:
